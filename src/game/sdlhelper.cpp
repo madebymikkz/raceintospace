@@ -506,7 +506,7 @@ SDL_Scale2x(SDL_Surface *src, SDL_Surface *dst)
 
     if (!dst)
         dst = SDL_CreateRGBSurface(SDL_SWSURFACE,
-                                   2 * src->w, 2 * src->h,
+                                   display::Graphics::SCALE * src->w, display::Graphics::SCALE * src->h,
                                    pf->BitsPerPixel, pf->Rmask, pf->Gmask, pf->Bmask, pf->Amask);
 
     if (!dst) {
@@ -515,8 +515,8 @@ SDL_Scale2x(SDL_Surface *src, SDL_Surface *dst)
 
     bpp = pf->BytesPerPixel;
 
-    if (2 * src->h != dst->h
-        || 2 * src->w != dst->w || bpp != dst->format->BytesPerPixel) {
+    if (display::Graphics::SCALE * src->h != dst->h
+        || display::Graphics::SCALE * src->w != dst->w || bpp != dst->format->BytesPerPixel) {
         SDL_SetError("dst surface size or bpp mismatch (%d vs %d)",
                      bpp, dst->format->BytesPerPixel);
         return NULL;
@@ -536,55 +536,70 @@ SDL_Scale2x(SDL_Surface *src, SDL_Surface *dst)
 
     SDL_GetClipRect(dst, &clp);
 
-    for (y = clp.y / 2; y < clp.y / 2 + clp.h / 2; ++y) {
-        for (x = clp.x / 2; x < clp.x / 2 + clp.w / 2; ++x) {
-            from = ((uint8_t *) src->pixels) + y * src->pitch + x * bpp;
-            to = ((uint8_t *) dst->pixels) + 2 * y * dst->pitch +
-                 2 * x * bpp;
+    for (y = 0; y < 200; ++y) {
+        for (x = 0; x < 320; ++x) {
+            from = ((uint8_t*)src->pixels) + y * src->pitch + x * bpp;
+            to = ((uint8_t*)dst->pixels) +
+                display::Graphics::SCALE * y * dst->pitch +
+                display::Graphics::SCALE * x * bpp;
 
-            switch (bpp) {
-#define ASSIGN do { \
-                    *(TYPE (to)) = *(TYPE from); \
-                    *(TYPE (to+bpp)) = *(TYPE from); \
-                    *(TYPE (to+dst->pitch)) = *(TYPE from); \
-                    *(TYPE (to+dst->pitch+bpp)) = *(TYPE from); \
-                } while (0)
-
-            case 1:
-#define TYPE (uint8_t *)
-                ASSIGN;
-                break;
-#undef TYPE
-
-            case 2:
-#define TYPE (uint16_t *)
-                ASSIGN;
-                break;
-#undef TYPE
-
-            case 3:
-#define TYPE (uint8_t *)
-                ASSIGN;
-                to++;
-                from++;
-                ASSIGN;
-                to++;
-                from++;
-                ASSIGN;
-                to++;
-                from++;
-                break;
-#undef TYPE
-
-            case 4:
-#define TYPE (uint32_t *)
-                ASSIGN;
-                break;
-#undef TYPE
-#undef ASSIGN
+            for (int i = 0; i < display::Graphics::SCALE; ++i) {
+                for (int j = 0; j < display::Graphics::SCALE; ++j) {
+                    *(to + ((320 * display::Graphics::SCALE) * i) + j) = *from;
+                }
             }
         }
     }
+
+//    for (y = clp.y / 2; y < clp.y / 2 + clp.h / 2; ++y) {
+//        for (x = clp.x / 2; x < clp.x / 2 + clp.w / 2; ++x) {
+//            from = ((uint8_t *) src->pixels) + y * src->pitch + x * bpp;
+//            to = ((uint8_t *) dst->pixels) + 2 * y * dst->pitch +
+//                 2 * x * bpp;
+//
+//            switch (bpp) {
+//#define ASSIGN do { \
+//                    *(TYPE (to)) = *(TYPE from); \
+//                    *(TYPE (to+bpp)) = *(TYPE from); \
+//                    *(TYPE (to+dst->pitch)) = *(TYPE from); \
+//                    *(TYPE (to+dst->pitch+bpp)) = *(TYPE from); \
+//                } while (0)
+//
+//            case 1:
+//#define TYPE (uint8_t *)
+//                ASSIGN;
+//                break;
+//#undef TYPE
+//
+//            case 2:
+//#define TYPE (uint16_t *)
+//                ASSIGN;
+//                break;
+//#undef TYPE
+//
+//            case 3:
+//#define TYPE (uint8_t *)
+//                ASSIGN;
+//                to++;
+//                from++;
+//                ASSIGN;
+//                to++;
+//                from++;
+//                ASSIGN;
+//                to++;
+//                from++;
+//                break;
+//#undef TYPE
+//
+//            case 4:
+//#define TYPE (uint32_t *)
+//                ASSIGN;
+//                break;
+//#undef TYPE
+//#undef ASSIGN
+//            }
+//        }
+//    }
 
     if (SDL_MUSTLOCK(dst)) {
         SDL_UnlockSurface(dst);
@@ -663,24 +678,26 @@ av_sync(void)
     SDL_BlitSurface(display::graphics.scaledScreenSurface(), NULL, display::graphics.displaySurface(), NULL);
 
     if (display::graphics.videoRect().h && display::graphics.videoRect().w) {
-        r.h = 2 * display::graphics.videoRect().h;
-        r.w = 2 * display::graphics.videoRect().w;
-        r.x = 2 * display::graphics.videoRect().x;
-        r.y = 2 * display::graphics.videoRect().y;
+        r.h = display::Graphics::SCALE * display::graphics.videoRect().h;
+        r.w = display::Graphics::SCALE * display::graphics.videoRect().w;
+        r.x = display::Graphics::SCALE * display::graphics.videoRect().x;
+        r.y = display::Graphics::SCALE * display::graphics.videoRect().y;
         SDL_DisplayYUVOverlay(display::graphics.videoOverlay(), &r);
     }
 
     if (display::graphics.newsRect().h && display::graphics.newsRect().w) {
-        r.h = 2 * display::graphics.newsRect().h;
-        r.w = 2 * display::graphics.newsRect().w;
-        r.x = 2 * display::graphics.newsRect().x;
-        r.y = 2 * display::graphics.newsRect().y;
+        r.h = display::Graphics::SCALE * display::graphics.newsRect().h;
+        r.w = display::Graphics::SCALE * display::graphics.newsRect().w;
+        r.x = display::Graphics::SCALE * display::graphics.newsRect().x;
+        r.y = display::Graphics::SCALE * display::graphics.newsRect().y;
         SDL_DisplayYUVOverlay(display::graphics.newsOverlay(), &r);
     }
 
     //TODO: Since we're not always tracking the right dirty area (due to the graphics refactoring)
     // for now we update the entire display every time.
-    SDL_UpdateRect(display::graphics.displaySurface(), 0, 0, 640, 400);
+    SDL_UpdateRect(display::graphics.displaySurface(), 0, 0,
+        display::Graphics::SCALE * display::Graphics::WIDTH,
+        display::Graphics::SCALE * display::Graphics::HEIGHT);
 }
 
 void

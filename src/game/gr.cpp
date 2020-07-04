@@ -26,16 +26,16 @@ grGetMouseButtons(void)
 int
 grGetMousePressedPos(int *xp, int *yp)
 {
-    *xp = av_mouse_pressed_x / 2;
-    *yp = av_mouse_pressed_y / 2;
+    *xp = av_mouse_pressed_x / display::Graphics::SCALE;
+    *yp = av_mouse_pressed_y / display::Graphics::SCALE;
     return (0);
 }
 
 int
 grGetMouseCurPos(int *xp, int *yp)
 {
-    *xp = av_mouse_cur_x / 2;
-    *yp = av_mouse_cur_y / 2;
+    *xp = av_mouse_cur_x / display::Graphics::SCALE;
+    *yp = av_mouse_cur_y / display::Graphics::SCALE;
     return (0);
 }
 
