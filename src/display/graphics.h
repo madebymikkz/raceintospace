@@ -22,7 +22,7 @@ public:
 
     static const int WIDTH = 320;
     static const int HEIGHT = 200;
-    static const int SCALE = 3;
+    static const int SCALE = 4;
     static const int VIDEO_WIDTH = 160;
     static const int VIDEO_HEIGHT = 100;
     static const int NEWS_WIDTH = 312;
