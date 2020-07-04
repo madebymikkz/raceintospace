@@ -495,6 +495,7 @@ static SDL_Surface *
 SDL_Scale2x(SDL_Surface *src, SDL_Surface *dst)
 {
     int x, y, bpp;
+    int x1, y1;
     uint8_t *from, *to;
     SDL_Rect clp;
     SDL_PixelFormat *pf;
@@ -543,9 +544,9 @@ SDL_Scale2x(SDL_Surface *src, SDL_Surface *dst)
                 display::Graphics::SCALE * y * dst->pitch +
                 display::Graphics::SCALE * x * bpp;
 
-            for (int i = 0; i < display::Graphics::SCALE; ++i) {
-                for (int j = 0; j < display::Graphics::SCALE; ++j) {
-                    *(to + ((320 * display::Graphics::SCALE) * i) + j) = *from;
+            for (y1 = 0; y1 < display::Graphics::SCALE; ++y1) {
+                for (x1 = 0; x1 < display::Graphics::SCALE; ++x1) {
+                    *(to + ((320 * display::Graphics::SCALE) * y1) + x1) = *from;
                 }
             }
         }
