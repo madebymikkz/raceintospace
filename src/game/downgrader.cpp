@@ -49,6 +49,8 @@ int Downgrader::Options::add(const int mission, const int code)
     }
 
     mDowngrades[mission].push_back(code);
+
+    return 0;
 }
 
 
