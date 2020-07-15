@@ -89,6 +89,7 @@ bool JointMissionOK(char plr, char pad);
 void DrawFuture(char plr, int mis, char pad, MissionNavigator &nav);
 void ClearDisplay(void);
 void DrawPenalty(char plr, const struct mStr &mission);
+void DrawPenaltyPopup(char plr, const struct mStr &mission);
 void SetParameters(void);
 void DrawLocks(const MissionNavigator &nav);
 void Toggle(FMFields button, int state);
@@ -318,9 +319,7 @@ void ClearDisplay(void)
 /* Displays the total mission penalty for the current selected mission.
  *
  * This calculates the sum of the prestige, duration, and new mission
- * penalties and reports it as the current mission penalty. The penalty
- * is calculated by the PrestMin() function (in prest.h). Duration is
- * passed to PrestMin via mission.Days.
+ * penalties and reports it as the current mission penalty.
  *
  * This relies on graphics loaded into the file variable vh.
  *
@@ -331,7 +330,7 @@ void DrawPenalty(char plr, const struct mStr &mission)
 {
     int u;
 
-    char penalty = PrestMin(plr, mission);
+    char penalty = AchievementPenalty(plr, mission);
     fill_rectangle(206, 36, 235, 44, 7);
 
     if (penalty < 3) {
@@ -355,6 +354,110 @@ void DrawPenalty(char plr, const struct mStr &mission)
     display::graphics.setForegroundColor(1);
 
     return;
+}
+
+
+/**
+ * Create a popup detailing the sources of the mission penalties.
+ *
+ * Launches a popup explaining how the projected mission penalty
+ * is calculated, and if there is any LM penalty. The popup starts
+ * it own control loop to handle input.
+ *
+ * TODO: Modify the color for each penalty line depending on how
+ *   large the penalty is.
+ * TODO: Create a keyHelp setting for the popup box explaining how
+ *   to close it via the keyboard.
+ *
+ * \param plr  the player index
+ * \param mission  the selected mission
+ */
+void DrawPenaltyPopup(char plr, const struct mStr &mission)
+{
+    int milestonePenalty = MilestonePenalty(plr, mission);
+    int durationPenalty = DurationPenalty(plr, mission);
+    int newMissionPenalty = NewMissionPenalty(plr, mission);
+
+    // Buffer the screen contents behing the popup for quick restoration.
+    display::LegacySurface local(165, 124);
+    local.copyFrom(display::graphics.legacyScreen(), 85, 52, 249, 175);
+
+    ShBox(85, 92, 249, 175);
+    InBox(92, 98, 243, 144);
+    display::graphics.setForegroundColor(11);
+    draw_string(97, 105, "REQUIREMENT PENALTIES:");
+
+    display::graphics.setForegroundColor(1);
+    draw_string(99, 116, "MILESTONE PENALTY");
+    draw_string(220, 116, "-");
+
+    if (milestonePenalty > 0) {
+        draw_number(0, 0, milestonePenalty);
+    } else {
+        draw_string(0, 0, "-");
+    }
+
+    draw_string(99, 124, "DURATION PENALTY");
+    draw_string(220, 124, "-");
+
+    if (durationPenalty > 0) {
+        draw_number(0, 0, durationPenalty);
+    } else {
+        draw_string(0, 0, "-");
+    }
+
+    draw_string(99, 132, "NEW MISSION PENALTY");
+    draw_string(220, 132, "-");
+
+    if (newMissionPenalty > 0) {
+        draw_number(0, 0, newMissionPenalty);
+    } else {
+        draw_string(0, 0, "-");
+    }
+
+    if (mission.LM && IsLunarLanding(mission.Index)) {
+        int lunarTestPenalty = 3 * MIN(Data->P[plr].LMpts - 3, 0);
+
+        display::graphics.setForegroundColor(24);
+        draw_string(99, 140, "PENALTY ON LM STEPS");
+
+        if (lunarTestPenalty >= 0) {
+            draw_string(220, 140, "--");
+        } else {
+            draw_number(220, 140, lunarTestPenalty);
+        }
+    }
+
+    IOBox(91, 151, 243, 172);
+    display::graphics.setForegroundColor(5);
+    draw_string(167 - TextDisplayLength("CONTINUE") / 2, 163,
+                "CONTINUE");
+
+    // Primitive control loop. Don't like using localized control loops,
+    // but it's the way RIS is written. -- rnyoakum
+    bool close = false;
+
+    while (! close) {
+        key = 0;
+        GetMouse();
+
+        if ((x >= 93 && y >= 153 && x <= 241 && y <= 170 && mousebuttons > 0) ||
+            (key == K_ENTER || key == K_ESCAPE)) {
+            InBox(93, 153, 241, 170);
+            WaitForMouseUp();
+
+            if (key > 0) {
+                delay(300);
+                key = 0;
+            }
+
+            close = true;
+            OutBox(93, 153, 241, 170);
+            delay(50);
+        }
+    }
+
+    display::graphics.screen()->draw(local, 85, 52);
 }
 
 
@@ -1143,6 +1246,9 @@ void Future(char plr)
                 WaitForMouseUp();
                 TogBox(166, 49, 0);
 
+            } else if (x >= 203 && y >= 24 && x <= 241 && y <= 44 && mousebuttons > 0) {
+                // Penalties popup
+                DrawPenaltyPopup(plr, missionData[misType]);
             } else if ((x >= 5 && y >= 84 && x <= 16 && y <= 130 && mousebuttons > 0) ||
                        (key == UP_ARROW)) {
                 // Scroll up among Mission Types
