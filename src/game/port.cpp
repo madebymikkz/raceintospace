@@ -468,7 +468,8 @@ void SpotCrap(char loc, char mode)
             switch (loc) {
             case 1:
             case 6:
-                PlayAudio("jet.ogg", 0);
+                // The sound of the jet is extremely annoying, get rid of it
+                //PlayAudio("jet.ogg", 0);
                 break;
 
             case 3:
