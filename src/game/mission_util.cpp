@@ -84,6 +84,28 @@ bool IsDuration(int mission)
 
 
 /**
+ * Checks if the mission takes place within the Low Earth Orbit (LEO)
+ * region of space.
+ *
+ * The Low Earth Orbit region includes "space" through Low Earth Orbit
+ * and thus covers suborbital flights.
+ *
+ * The Atlas/R-7 rocket is incapable of reaching lunar orbit or beyond.
+ * This implementation depends upon strict mission numbering, so any
+ * changes to the mission data file could result in errors.
+ *
+ * \param mission  The type per mStr.Index or MissionType.MissionCode.
+ * \return  true if within the LEO region, false if beyond.
+ */
+bool IsLEORegion(int mission)
+{
+    return ! ((mission >= Mission_LunarFlyby &&
+               mission <= Mission_SaturnFlyby) ||
+              (mission >= 42 && mission <= 57));
+}
+
+
+/**
  * Checks if the mission is a lunar landing.
  *
  * This implementation depends upon strict mission numbering, so any
@@ -99,6 +121,38 @@ bool IsLunarLanding(int mission)
 {
     return (mission >= Mission_HistoricalLanding &&
             mission <= Mission_Soyuz_LL);
+}
+
+
+/**
+ * Checks if the mission is manned.
+ *
+ * This method uses Morgan's code to check the mission type to see
+ * if it is manned. In Morgan's code, mission types are
+ *   0: An unmanned mission
+ *   1: A single pad unmanned mission with capsule/minishuttle
+ *   2: A single pad manned mission
+ *   3: A joint mission with a single manned launch
+ *   4: A joint mission with two manned launches
+ *   5: A joint mission with an unmanned capsule/minishuttle
+ *
+ * Morgan's code is a little esoteric, so other methods of checking
+ * include:
+ *  - Strict mission numbering check (no file IO, but vulnerable
+ *    to change), or
+ *  - checking the Prestige Categories field (mStr.PCcat) for the
+ *    presence of Prestige_MannedSpaceMission, or
+ *  - the duration listing (mStr.Days) for a non-zero value
+ *    (Prevents use of mStr.Days for storing Flyby duration).
+ *
+ * \param mission  The type per mStr.Index or MissionType.MissionCode.
+ * \return  true if manned, false otherwise.
+ * \throws IOException  if unable to load the mission template.
+ */
+bool IsManned(int mission)
+{
+    char mCrew = GetMissionPlan(mission).mCrew;
+    return (mCrew == 2 || mCrew == 3 || mCrew == 4);
 }
 
 
